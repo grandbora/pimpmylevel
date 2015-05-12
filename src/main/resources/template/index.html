@@ -91,7 +91,10 @@
         type: "POST",
         url: "/upvote",
         data: user.id,
-        success: function() {alert("upvoted " + user.fullName1)},
+        success: function() {
+          alert("upvoted " + user.fullName1);
+          window.location.href = "/top";
+        },
       });
     }
 
