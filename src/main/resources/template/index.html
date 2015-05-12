@@ -74,8 +74,11 @@
 <div class="lvl3Title"><h4>lvl 3</h4></div>
 <div class="lvl3"></div>
 
-<div class="lvl2Title"><h4>lvl 2 and 1</h4></div>
+<div class="lvl2Title"><h4>lvl 2</h4></div>
 <div class="lvl2"></div>
+
+<div class="lvl1Title"><h4>lvl 1</h4></div>
+<div class="lvl1"></div>
 
 <div class="footer">
   <i>PS. yes you can vote multiple times to same person, please don't do so!</i>
@@ -99,21 +102,7 @@
     }
 
     $.each(bambooData.users, function( user_id, user ) {
-      var section = null;
-      switch(user.level) {
-        case 6:
-        case 5:
-        case 4:
-        case 3:
-          var section = $(".lvl" + user.level);
-          break;
-
-        case 2:
-        case 1:
-        case 0:
-          var section = $(".lvl2");
-          break;
-        }
+        var section = $(".lvl" + user.level);
 
         var voteButton = $("<div>", {class: "vote"}).html("&#10010;")
         voteButton.click(function() {
