@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <script src="/jquery"></script>
+    <title>PIMP MY LEVEL</title>
+    <style>
+        body {
+        background-color: linen;
+        }
+
+        a {
+        text-decoration: none;
+        color: inherit;
+        }
+
+        .user {
+        margin: 1px 3px 1px 3px;
+        display: inline-block;
+        cursor:pointer;
+        color:#663300;
+        }
+
+        .user .vote, .user .meta{
+        display: inline-block;
+        }
+
+        .user .vote{
+        padding: 4px 2px 4px 2px;
+        background: #FFCC99;
+        }
+
+        .user .vote:hover {
+        color: red;
+        background: #00CC66;
+        }
+
+        .user .meta {
+        padding: 4px;
+        margin: 0px 2px 0px 2px;
+        background: #FFCC99;
+        }
+
+        .user .meta:hover {
+        color:red;
+        }
+
+        .menu a {
+        color:blue;
+        text-decoration: underline;
+        margin: 0px 8px;
+        }
+    </style>
+</head>
+<body>
+<div class="menu">
+    <a href="/">Eng-Org</a>
+    <a href="/top">Top Votes</a>
+</div>
+
+<div><h1>TOP VOTED</h4></div>
+<div class="highlight"></div>
+<div><h1>Followers</h2></div>
+<div class="follower"></div>
+
+<script type="text/javascript">
+    var bambooData = {{bambooData}}
+    var voteData = {{voteData}}
+
+    var highlightCounter = 0
+
+    var highlightContainer = $(".highlight")
+    var followerContainer = $(".follower")
+
+    voteData.forEach(function(elem){
+        var user = bambooData.users[elem.userId];
+
+        var section = highlightCounter < 2 ? highlightContainer : followerContainer;
+        var userAnchor = $("<div>", {class: "meta"}).append($("<a>", {href: "https://soundcloud.bamboohr.co.uk/employees/employee.php?id="+user.id}).text(user.fullName1));
+        var votesContainer = $("<div>", {class: "vote"}).html(elem.votes)
+        var fontSize = Math.min(elem.votes * 8, 120)
+        section.append($("<div>", {class: "user"}).css("font-size", fontSize+"px").append(userAnchor, votesContainer));
+
+        highlightCounter++
+    });
+
+</script>
+</body>
+</html>

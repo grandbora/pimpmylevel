@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <script src="/jquery"></script>
+    <title>PIMP MY LEVEL</title>
+    <style>
+      body {
+        background-color: linen;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+
+      .user {
+        margin: 1px 3px 1px 3px;
+        display: inline-block;
+        cursor:pointer;
+        color:#663300;
+      }
+
+      .user .vote, .user .meta{
+        display: inline-block;
+      }
+
+      .user .vote{
+        padding: 4px 2px 4px 2px;
+        background: #FFCC99;
+      }
+
+      .user .vote:hover {
+        color: red;
+        background: #00CC66;
+      }
+
+      .user .meta {
+        padding: 4px;
+        margin: 0px 2px 0px 2px;
+        background: #FFCC99;
+      }
+
+      .user .meta:hover {
+        color:red;
+      }
+
+      .menu a {
+        color:blue;
+        text-decoration: underline;
+        margin: 0px 8px;
+      }
+    </style>
+</head>
+<body>
+<div class="menu">
+  <a href="/">Eng-Org</a>
+  <a href="/top">Top Votes</a>
+</div>
+
+<div class="lvl6Title"><h4>lvl 6</h4></div>
+<div class="lvl6"></div>
+
+<div class="lvl5Title"><h4>lvl 5</h4></div>
+<div class="lvl5"></div>
+
+<div class="lvl4Title"><h4>lvl 4</h4></div>
+<div class="lvl4"></div>
+
+<div class="lvl3Title"><h4>lvl 3</h4></div>
+<div class="lvl3"></div>
+
+<div class="lvl2Title"><h4>kids (lvl 2 and below)</h4></div>
+<div class="lvl2"></div>
+
+<script type="text/javascript">
+    var bambooData = {{bambooData}}
+
+    function upvoteUser(user) {
+      console.log(user.id)
+
+      $.ajax({
+        type: "POST",
+        url: "/upvote",
+        data: user.id,
+        success: function() {alert("upvoted " + user.fullName1)},
+      });
+    }
+
+    $.each(bambooData.users, function( user_id, user ) {
+      var section = null;
+      switch(user.level) {
+        case 6:
+        case 5:
+        case 4:
+        case 3:
+          var section = $(".lvl" + user.level);
+          break;
+
+        case 2:
+        case 1:
+        case 0:
+          var section = $(".lvl2");
+          break;
+        }
+
+        var voteButton = $("<div>", {class: "vote"}).html("&#10010;")
+        voteButton.click(function() {
+          upvoteUser(user)
+        });
+
+        var userAnchor = $("<div>", {class: "meta"}).append($("<a>", {href: "https://soundcloud.bamboohr.co.uk/employees/employee.php?id="+user.id}).text(user.fullName1))
+        section.append($("<div>", {class: "user"}).append(userAnchor, voteButton));
+    });
+
+</script>
+</body>
+</html>
