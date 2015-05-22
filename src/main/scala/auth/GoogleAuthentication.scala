@@ -22,12 +22,35 @@ class GoogleAuthentication {
     .build
 
 
-  def tokenResponse(code: String) = {
+  def tokenResponse(code: String): Option[User] = {
     val tokenRequest = authFlow.newTokenRequest(code).setRedirectUri(s"$APP_HOST/google-auth-callback")
-    Try(tokenRequest.execute()).toOption.map{
+    Try(tokenRequest.execute()).toOption.map {
       resp =>
         val payload = resp.parseIdToken().getPayload
-        (payload.getSubject, payload.getEmail)
+        val userId = payload.getSubject
+        val email = payload.getEmail
+
+        email match {
+          case SoundcloudEmailValidator(email) => AllowedUser(userId, email)
+          case _ => NotAllowedUser(userId, email)
+        }
     }
   }
+}
+
+sealed trait User
+
+case class AllowedUser(id: String, email: String) extends User
+
+case class NotAllowedUser(id: String, email: String) extends User
+
+object SoundcloudEmailValidator {
+
+  val soundcloudEmailRegexp = """.*@soundcloud.com$""".r
+
+  def unapply(email: String): Option[String] =
+    if (soundcloudEmailRegexp.pattern.matcher(email).matches)
+      Some(email)
+    else
+      None
 }

@@ -1,6 +1,6 @@
 import java.net.InetSocketAddress
 
-import auth.{BasicAuthentication, GoogleAuthentication}
+import auth.{NotAllowedUser, AllowedUser, BasicAuthentication, GoogleAuthentication}
 import com.twitter.finagle.Service
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.finagle.http.{Http, Response}
@@ -60,7 +60,7 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
 
       case googleAuthCallbackPattern(code) =>
         googleAuthentication.tokenResponse(code) match {
-          case Some((userId, email)) =>
+          case Some(AllowedUser(id, email)) =>
             val response = Response()
             response.setStatusCode(200)
             response.setContentType("text/html")
@@ -72,6 +72,12 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
                 response.setContentString(template)
                 response
             }
+
+          case Some(NotAllowedUser(id, email)) =>
+            val response = Response()
+            response.setStatusCode(302)
+            response.headers.set("Location", "http://i.giphy.com/13kbzEy2X42hig.gif")
+            Future(response)
 
           case None =>
             val response = Response()
