@@ -1,5 +1,6 @@
 import java.net.InetSocketAddress
 
+import auth.{BasicAuthentication, GoogleAuthentication}
 import com.twitter.finagle.Service
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.finagle.http.{Http, Response}
@@ -24,9 +25,12 @@ object Web {
 }
 
 class Pimp extends Service[HttpRequest, HttpResponse] {
-  val authenticator = new Authenticator
+  val basicAuthentication = new BasicAuthentication
+  val googleAuthentication = new GoogleAuthentication
   val dataScraper = new DataScraper
   val voter = new Voter
+
+  val googleAuthCallbackPattern = """\/google-auth-callback\?code=(.*)""".r
 
   def apply(req: HttpRequest): Future[HttpResponse] = {
 
@@ -48,8 +52,36 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
         response.setContentString(jquery)
         Future(response)
 
+      case "/" =>
+        val response = Response()
+        response.setStatusCode(301)
+        response.headers.set("Location", googleAuthentication.redirectUrl)
+        Future(response)
+
+      case googleAuthCallbackPattern(code) =>
+        googleAuthentication.tokenResponse(code) match {
+          case Some((userId, email)) =>
+            val response = Response()
+            response.setStatusCode(200)
+            response.setContentType("text/html")
+            dataScraper.loadOrFallback.map {
+              scrapedData =>
+                val template = scala.io.Source.fromFile("src/main/resources/template/index.html").mkString
+                  .replace("{{bambooData}}", scrapedData)
+                  .replace("{{userEmail}}", email)
+                response.setContentString(template)
+                response
+            }
+
+          case None =>
+            val response = Response()
+            response.setStatusCode(200)
+            response.setContentString("Yikes. It's borked")
+            Future(response)
+        }
+
       case "/scrape" =>
-        authenticator.authenticate(req) {
+        basicAuthentication.authenticate(req) {
           req =>
             val response = Response()
             response.setStatusCode(200)
@@ -59,7 +91,7 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
         }
 
       case "/data" =>
-        authenticator.authenticate(req) {
+        basicAuthentication.authenticate(req) {
           req =>
             dataScraper.loadWithFallbackAndScrape.map {
               scrapedData =>
@@ -71,23 +103,8 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
             }
         }
 
-      case "/" =>
-        authenticator.authenticate(req) {
-          req =>
-            val response = Response()
-            response.setStatusCode(200)
-            response.setContentType("text/html")
-            dataScraper.loadOrFallback.map {
-              scrapedData =>
-                val template = scala.io.Source.fromFile("src/main/resources/template/index.html").mkString
-                  .replace("{{bambooData}}", scrapedData)
-                response.setContentString(template)
-                response
-            }
-        }
-
       case "/top" =>
-        authenticator.authenticate(req) {
+        basicAuthentication.authenticate(req) {
           req =>
             voter.totalVotes.flatMap {
               voteData =>
@@ -115,6 +132,13 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
             response.setContentString("OK")
             response
         }
+
+      case _ =>
+        val response = Response()
+        response.setStatusCode(200)
+        response.setContentType("text/html")
+        response.setContentString(s"Could not find any route for path ${req.getUri}")
+        Future.value(response)
     }
   }
 }

@@ -1,10 +1,12 @@
+package auth
+
 import com.twitter.finagle.http.Response
 import com.twitter.util.Future
 import org.jboss.netty.handler.codec.http.HttpRequest
 
 import scala.util.Properties
 
-class Authenticator {
+class BasicAuthentication {
 
   private val scPass = Properties.envOrNone("SC_PASSWORD").get
 

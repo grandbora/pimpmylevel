@@ -55,7 +55,7 @@ class DataScraper {
         u.attribute("employeeId").flatMap(_.headOption).map(_.text) match {
           case None => Future.None
           case Some(employeeId) =>
-            val userReq = RequestBuilder().url(s"https://api.bamboohr.com/api/gateway.php/soundcloud/v1/employees/$employeeId?fields=jobTitle,fullName1,birthday,hireDate").buildGet
+            val userReq = RequestBuilder().url(s"https://api.bamboohr.com/api/gateway.php/soundcloud/v1/employees/$employeeId?fields=jobTitle,fullName1,fullName3,displayName,workEmail,birthday,hireDate").buildGet
             userReq.headers().add("Authorization", "Basic " + authStringEnc)
             userReq.headers().add("Accept", "application/json")
 
