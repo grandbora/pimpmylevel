@@ -1,11 +1,13 @@
 import java.net.InetSocketAddress
 
-import auth.{NotAllowedUser, AllowedUser, BasicAuthentication, GoogleAuthentication}
+import auth.{AllowedUser, BasicAuthentication, GoogleAuthentication, NotAllowedUser}
+import com.sun.xml.internal.ws.client.sei.ResponseBuilder
 import com.twitter.finagle.Service
 import com.twitter.finagle.builder.ServerBuilder
 import com.twitter.finagle.http.{Http, Response}
 import com.twitter.util.Future
 import org.jboss.netty.handler.codec.http._
+import org.jboss.netty.handler.codec.http.multipart.{Attribute, HttpPostRequestDecoder}
 
 import scala.util.Properties
 
@@ -28,6 +30,7 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
   val basicAuthentication = new BasicAuthentication
   val googleAuthentication = new GoogleAuthentication
   val dataScraper = new DataScraper
+  val nominator = new Nominator
   val voter = new Voter
 
   val googleAuthCallbackPattern = """\/google-auth-callback\?code=(.*)""".r
@@ -52,40 +55,6 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
         response.setContentString(jquery)
         Future(response)
 
-      case "/" =>
-        val response = Response()
-        response.setStatusCode(301)
-        response.headers.set("Location", googleAuthentication.redirectUrl)
-        Future(response)
-
-      case googleAuthCallbackPattern(code) =>
-        googleAuthentication.tokenResponse(code) match {
-          case Some(AllowedUser(id, email)) =>
-            val response = Response()
-            response.setStatusCode(200)
-            response.setContentType("text/html")
-            dataScraper.loadOrFallback.map {
-              scrapedData =>
-                val template = scala.io.Source.fromFile("src/main/resources/template/index.html").mkString
-                  .replace("{{bambooData}}", scrapedData)
-                  .replace("{{userEmail}}", email)
-                response.setContentString(template)
-                response
-            }
-
-          case Some(NotAllowedUser(id, email)) =>
-            val response = Response()
-            response.setStatusCode(302)
-            response.headers.set("Location", "http://i.giphy.com/13kbzEy2X42hig.gif")
-            Future(response)
-
-          case None =>
-            val response = Response()
-            response.setStatusCode(200)
-            response.setContentString("Yikes. It's borked")
-            Future(response)
-        }
-
       case "/scrape" =>
         basicAuthentication.authenticate(req) {
           req =>
@@ -107,6 +76,55 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
                 response.setContentString(scrapedData)
                 response
             }
+        }
+
+      case "/" =>
+        val response = Response()
+        response.setStatusCode(301)
+        response.headers.set("Location", googleAuthentication.redirectUrl)
+        Future(response)
+
+      case googleAuthCallbackPattern(code) =>
+        googleAuthentication.tokenResponse(code) match {
+          case Some(AllowedUser(id, email)) =>
+            val response = Response()
+            response.setStatusCode(200)
+            response.setContentType("text/html")
+
+            Future.join(dataScraper.loadOrFallback, nominator.allNominationsPerNominator).map {
+              case (scrapedData, nominationsPerNominator) =>
+              val template = scala.io.Source.fromFile("src/main/resources/template/index.html").mkString
+                .replace("{{bambooData}}", scrapedData)
+                .replace("{{nominationsPerNominator}}", nominationsPerNominator)
+                .replace("{{userEmail}}", email)
+              response.setContentString(template)
+              response
+            }
+
+          case Some(NotAllowedUser(id, email)) =>
+            val response = Response()
+            response.setStatusCode(302)
+            response.headers.set("Location", "http://i.giphy.com/13kbzEy2X42hig.gif")
+            Future(response)
+
+          case None =>
+            val response = Response()
+            response.setStatusCode(200)
+            response.setContentString("Yikes. It's borked")
+            Future(response)
+        }
+
+      case "/nominate" =>
+        val postData = new String(req.getContent.toByteBuffer.array(), "UTF-8")
+        val decoder = new HttpPostRequestDecoder(req)
+
+        val user = decoder.getBodyHttpData("user").asInstanceOf[Attribute].getValue
+        val nominee = decoder.getBodyHttpData("nominee").asInstanceOf[Attribute].getValue
+
+        nominator.nominate(user, nominee).map {
+          res =>
+            val response = Response()
+            response
         }
 
       case "/top" =>

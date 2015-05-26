@@ -5,115 +5,158 @@
     <script src="/jquery"></script>
     <title>PIMP MY LEVEL</title>
     <style>
-      body {
-        background-color: linen;
-      }
+        body {
+            background-color: linen;
+        }
 
-      a {
-        text-decoration: none;
-        color: inherit;
-      }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
 
-      .user {
-        margin: 1px 3px 1px 3px;
-        display: inline-block;
-        cursor:pointer;
-        color:#663300;
-      }
+        .employees, .selectedEmployee {
+            display: inline-block;
+            vertical-align: top;
+        }
 
-      .user .vote, .user .meta{
-        display: inline-block;
-      }
+        .employees {
+            width: 70%;
+        }
 
-      .user .vote{
-        padding: 4px 2px 4px 2px;
-        background: #FFCC99;
-      }
+        .selectedEmployee {
+            width: 29%;
+        }
 
-      .user .vote:hover {
-        color: red;
-        background: #00CC66;
-      }
+        .user {
+            margin: 1px 3px 1px 3px;
+            display: inline-block;
+            cursor: pointer;
+            color: #663300;
+            background: #FFCC99;
+        }
 
-      .user .meta {
-        padding: 4px;
-        margin: 0px 2px 0px 2px;
-        background: #FFCC99;
-      }
+        .user:hover {
+            color: red;
+            background: #00CC66;
+        }
 
-      .user .meta:hover {
-        color:red;
-      }
+        .menu a {
+            color: blue;
+            text-decoration: underline;
+            margin: 0px 8px;
+        }
 
-      .menu a {
-        color:blue;
-        text-decoration: underline;
-        margin: 0px 8px;
-      }
-
-      .footer {
-      margin: 10px 8px;
-      }
+        .footer {
+            margin: 10px 8px;
+        }
     </style>
 </head>
 <body>
 <div class="menu">
-  <a href="/">Eng-Org</a>
-  <a href="/top">Top Votes</a>
+    <a href="/">Eng-Org</a>
+    <a href="/top">Top Votes</a>
 </div>
 
-<div class="lvl6Title"><h4>lvl 6</h4></div>
-<div class="lvl6"></div>
+<div class="mainContent">
+    <div class="employees">
+        <div class="lvl6Title"><h4>lvl 6</h4></div>
+        <div class="lvl6"></div>
 
-<div class="lvl5Title"><h4>lvl 5</h4></div>
-<div class="lvl5"></div>
+        <div class="lvl5Title"><h4>lvl 5</h4></div>
+        <div class="lvl5"></div>
 
-<div class="lvl4Title"><h4>lvl 4</h4></div>
-<div class="lvl4"></div>
+        <div class="lvl4Title"><h4>lvl 4</h4></div>
+        <div class="lvl4"></div>
 
-<div class="lvl3Title"><h4>lvl 3</h4></div>
-<div class="lvl3"></div>
+        <div class="lvl3Title"><h4>lvl 3</h4></div>
+        <div class="lvl3"></div>
 
-<div class="lvl2Title"><h4>lvl 2</h4></div>
-<div class="lvl2"></div>
+        <div class="lvl2Title"><h4>lvl 2</h4></div>
+        <div class="lvl2"></div>
 
-<div class="lvl1Title"><h4>lvl 1</h4></div>
-<div class="lvl1"></div>
+        <div class="lvl1Title"><h4>lvl 1</h4></div>
+        <div class="lvl1"></div>
+    </div>
+
+    <div class="selectedEmployee">
+        <div class="name"></div>
+        <div class="title"></div>
+        <div class="bamboo"><a href="">go to bamboo</a></div>
+        <div class="nominate">nominate</div>
+        <div class="relations">
+            <div class="nominate-by">nominate-by</div>
+            <div class="nominees">nominees</div>
+        </div>
+    </div>
+</div>
 
 <div class="footer">
-  <i>PS. yes you can vote multiple times to same person, please don't do so!</i>
+    #YOLO
 </div>
 
 <script type="text/javascript">
-    var userEmail = "{{userEmail}}"
+
+    //DATA
+    var loggedInUserEmail = "{{userEmail}}"
     var bambooData = {{bambooData}}
+    var nominationsPerNominator = {{nominationsPerNominator}}
+    
 
-    function upvoteUser(user) {
-      console.log(user.id)
-
-      $.ajax({
-        type: "POST",
-        url: "/upvote",
-        data: user.id,
-        success: function() {
-          alert("upvoted " + user.fullName1);
-          window.location.href = "/top";
-        },
-      });
-    }
-
-    $.each(bambooData.users, function( user_id, user ) {
-        var section = $(".lvl" + user.level);
-
-        var voteButton = $("<div>", {class: "vote"}).html("&#10010;")
-        voteButton.click(function() {
-          upvoteUser(user)
-        });
-
-        var userAnchor = $("<div>", {class: "meta"}).append($("<a>", {href: "https://soundcloud.bamboohr.co.uk/employees/employee.php?id="+user.id}).text(user.fullName1))
-        section.append($("<div>", {class: "user"}).append(userAnchor, voteButton));
+    var usersArr = $.map( bambooData.users, function( value, key ) {
+      return value;
     });
 
+    //Setup
+    var loggedInUser = getLoggedInUser()
+    var selectedUser = loggedInUser ? loggedInUser : usersArr[0]
+
+    setUpSideBar()
+    setUpEmployeeList()
+    highlightEmployee(selectedUser)
+    
+    // TADA
+    function getLoggedInUser() {
+        var selection = $.grep(usersArr, function( user ) {
+          return user.workEmail === loggedInUserEmail;
+        });
+        return selection.length == 1 ? selection[0] : null
+    }
+
+    function setUpEmployeeList() {
+        $.each(bambooData.users, function( user_id, user ) {
+            var section = $(".lvl" + user.level);
+            var userView = $("<div>", {class: "user"}).html(user.displayName)
+            userView.click(function() {
+              highlightEmployee(user)
+            });
+            section.append(userView);
+        });
+    }
+
+    function setUpSideBar() {
+        $(".selectedEmployee .nominate").click(nominate);
+    }
+
+    function highlightEmployee(user) {
+        selectedUser = user
+        var section = $(".selectedEmployee")
+        section.find(".name").first().html(user.displayName)
+        section.find(".title").first().html(user.jobTitle)
+        var bambooProfile = "https://soundcloud.bamboohr.co.uk/employees/employee.php?id="+user.id
+        section.find(".bamboo a").first().attr("href", bambooProfile)
+    }
+
+    function nominate() {
+        var data = {"user":loggedInUser.id, "nominee":selectedUser.id}
+        $.ajax({
+            type: "POST",
+            url: "/nominate",
+            data: data,
+            success: function() {
+                window.location.replace("/");
+            },
+        });
+    }
 </script>
 </body>
 </html>
