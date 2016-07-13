@@ -91,7 +91,7 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
           req =>
             val response = Response()
             response.setStatusCode(200)
-            response.setContentString("creating data.json")
+            response.setContentString("updating db with the latest org schema")
             dataScraper.scrapeBamboo
             Future(response)
         }

@@ -15,6 +15,8 @@ class DataScraper {
 
   private val readScrapeQuery = """SELECT `data` FROM scrapes ORDER BY ID DESC LIMIT 1"""
 
+  private val storeOrgSchema = """INSERT INTO `scrapes` (`data`) VALUES (?)"""
+
   var bambooData: Option[JsObject] = None
 
   def scrapeBamboo: Future[JsObject] = {
@@ -26,8 +28,12 @@ class DataScraper {
         val rootElm = scala.xml.XML.loadString(bodyText)
         println(bodyText)
         val users = parseUsers(rootElm \\ "user")
-        users.map(d => bambooData = Some(d))
-        users
+        users.onSuccess {
+          d =>
+            bambooData = Some(d)
+            val ps = MysqlClient.richClient.prepare(storeOrgSchema)
+            ps(d.toString)
+        }
     }
   }
 

@@ -1,6 +1,6 @@
 
 
-name := "hello"
+name := "pimpmylevel"
 
 version := "1.0"
 
