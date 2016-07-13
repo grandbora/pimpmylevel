@@ -1,1 +1,1 @@
-web: target/universal/stage/bin/hello
+web: target/universal/stage/bin/pimpmylevel
