@@ -27,7 +27,7 @@ class DataScraper {
         val bodyText = new String(res.getContent.toByteBuffer.array(), "UTF-8")
         val rootElm = scala.xml.XML.loadString(bodyText)
         println(bodyText)
-        val users = parseUsers(rootElm \\ "user")
+        val users = parseUsers((rootElm \\ "user").take(2))
         users.onSuccess {
           d =>
             println(d.toString)
