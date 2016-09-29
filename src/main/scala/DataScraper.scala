@@ -30,6 +30,7 @@ class DataScraper {
         val users = parseUsers(rootElm \\ "user")
         users.onSuccess {
           d =>
+            println(d.toString)
             bambooData = Some(d)
             val ps = MysqlClient.richClient.prepare(storeOrgSchema)
             ps(d.toString)
