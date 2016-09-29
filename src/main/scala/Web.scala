@@ -109,6 +109,21 @@ class Pimp extends Service[HttpRequest, HttpResponse] {
             }
         }
 
+      case "/dbtest" =>
+        basicAuthentication.authenticate(req) {
+          req =>
+
+            val storeOrgSchema = """INSERT INTO `scrapes` (`data`) VALUES (?)"""
+            val ps = MysqlClient.richClient.prepare(storeOrgSchema)
+            ps("testEntry").map{
+              case res =>
+              val response = Response()
+              response.setStatusCode(200)
+              response.setContentString(s"$res")
+              response
+            }
+        }
+
       case "/top" =>
         basicAuthentication.authenticate(req) {
           req =>
