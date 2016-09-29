@@ -70,8 +70,7 @@ class DataScraper {
                 val user = Some(new String(r.getContent.toByteBuffer.array(), "UTF-8")).filterNot(_.isEmpty)
                 val titleRegexp = """.* \((\d)\)""".r
 
-                println("got response", r)
-                println(user)
+                println(s"user: $user")
 
                 user.flatMap(u => (Json.parse(u) \ "jobTitle").asOpt[String]) match {
                   case Some(title@titleRegexp(level)) =>
